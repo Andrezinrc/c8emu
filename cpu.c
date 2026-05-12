@@ -24,11 +24,24 @@ void cpu_step(struct Chip8 *cpu) {
                     cpu->draw_flag = true;
                     cpu->PC += 2;
                     break;
+                case 0x00EE: /* RET */
+                    cpu->SP--;
+                    cpu->PC = cpu->stack[cpu->SP];
+                    break;
                 default:
                     fprintf(stderr, "Unknown 0x0000: 0x%04X\n", op);
                     exit(1);
                     break;
             }
+            break;
+
+        case 0x1000: /* 1NNN - JP */
+            cpu->PC = OP_NNN(op);
+            break;
+        case 0x2000: /* 2NNN - CALL */
+            cpu->stack[cpu->SP] = cpu->PC + 2;
+            cpu->SP++;
+            cpu->PC = OP_NNN(op);
             break;
 
         default:

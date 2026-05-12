@@ -7,6 +7,12 @@ int main() {
     printf("--- Initializing CHIP-8 Emulator ---\n");
     cpu_init(&cpu);
 
+    cpu.ram[0x200] = 0x23;
+    cpu.ram[0x201] = 0x00;
+
+    cpu.ram[0x300] = 0x12;
+    cpu.ram[0x301] = 0x00;
+
     printf("\n--- Executing Cycle ---\n");
     while (1) {
         uint16_t op = (cpu.ram[cpu.PC] << 8) | cpu.ram[cpu.PC + 1];

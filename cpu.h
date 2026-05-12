@@ -9,7 +9,8 @@
 #define STACK_SIZE 16
 #define KEY_COUNT  16
 
-#define OP_KK(op)  ((op) & 0x00FF)
+#define OP_KK(op)  ((op) & 0x00FF)         /* 8-bit constant (Byte)       */
+#define OP_NNN(op) ((op) & 0x0FFF)         /* 12-bit memory address       */
 
 struct Chip8 {
     uint8_t  ram[RAM_SIZE];
