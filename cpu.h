@@ -9,6 +9,8 @@
 #define STACK_SIZE 16
 #define KEY_COUNT  16
 
+#define OP_X(op)   (((op) & 0x0F00) >> 8)  /* Register VX (4-bit index)   */
+#define OP_Y(op)   (((op) & 0x00F0) >> 4)  /* Register VY (4-bit index)   */
 #define OP_KK(op)  ((op) & 0x00FF)         /* 8-bit constant (Byte)       */
 #define OP_NNN(op) ((op) & 0x0FFF)         /* 12-bit memory address       */
 
