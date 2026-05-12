@@ -18,7 +18,7 @@ void cpu_step(struct Chip8 *cpu) {
     /* Decode & Execute */
     switch (op & 0xF000) {
         case 0x0000:
-            switch (OP_KK(op)) {
+            switch (op) {
                 case 0x00E0: /* CLS */
                     memset(cpu->display, 0, sizeof(cpu->display));
                     cpu->draw_flag = true;
