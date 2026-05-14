@@ -3,6 +3,15 @@
 #include <string.h>
 #include <stdlib.h>
 
+
+#define UNKNOWN_OPCODE(op) \
+    do { \
+        fprintf(stderr, "Unknown opcode: 0x%04X at PC: 0x%03X\n", \
+                op, cpu->PC); \
+        exit(1); \
+    } while (0)
+
+
 void cpu_init(struct Chip8 *cpu) {
     memset(cpu, 0, sizeof(struct Chip8));
     cpu->PC = 0x200;
@@ -26,9 +35,8 @@ void cpu_step(struct Chip8 *cpu) {
                     cpu->SP--;
                     cpu->PC = cpu->stack[cpu->SP];
                     break;
-                default:     /* 0NNN - SYS addr */
-                    cpu->PC += 2;
-                    break;
+                default:
+                    UNKNOWN_OPCODE(op);
             }
             break;
         case 0x1000: /* 1NNN - JP addr */
@@ -107,13 +115,25 @@ void cpu_step(struct Chip8 *cpu) {
                     cpu->PC += 2;
                     break;
                 default:
-                    cpu->PC += 2;
-                    break;
+                    UNKNOWN_OPCODE(op);
             }
             break;
-        default:
-            fprintf(stderr, "Opcode 0x%04X not implemented yet!\n", op);
-            exit(1); 
+        case 0x9000: /* 9XY0 - SNE Vx, Vy */
+            if (cpu->V[OP_X(op)] != cpu->V[OP_Y(op)]) cpu->PC += 4;
+            else cpu->PC += 2;
             break;
+        case 0xA000: /* ANNN - LD I, addr */
+            cpu->I = OP_NNN(op);
+            cpu->PC += 2;
+            break;
+        case 0xB000: /* BNNN - JP V0, addr */
+            cpu->PC = OP_NNN(op) + cpu->V[0];
+            break;
+        case 0xC000: /* CXKK - RND Vx, byte */
+            cpu->V[OP_X(op)] = (rand() % 256) & OP_KK(op);
+            cpu->PC += 2;
+            break;
+        default:
+            UNKNOWN_OPCODE(op);
     }
 }
