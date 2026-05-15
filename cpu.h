@@ -1,19 +1,16 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
+#include "display.h"
 
 #define RAM_SIZE   4096
 #define REG_COUNT  16
 #define STACK_SIZE 16
 #define KEY_COUNT  16
-
-#define OP_X(op)   (((op) & 0x0F00) >> 8)  /* Register VX (4-bit index)   */
-#define OP_Y(op)   (((op) & 0x00F0) >> 4)  /* Register VY (4-bit index)   */
-#define OP_KK(op)  ((op) & 0x00FF)         /* 8-bit constant (Byte)       */
-#define OP_N(op)   ((op) & 0x000F)         /* 4-bit constant (Nibble)     */
-#define OP_NNN(op) ((op) & 0x0FFF)         /* 12-bit memory address       */
 
 struct Chip8 {
     uint8_t  ram[RAM_SIZE];
@@ -26,10 +23,16 @@ struct Chip8 {
     uint8_t  sound_timer;
     uint8_t  key[KEY_COUNT];
     uint8_t  display[64][32];
-    bool     draw_flag;
+    int      draw_flag;
 };
 
+extern void (*cpu_op_handler[0x10000])(struct Chip8*, uint16_t);
+extern const char* cpu_op_name[0x10000];
+
+int cpu_load_rom(struct Chip8 *cpu, const char *rom_path);
 void cpu_init(struct Chip8 *cpu);
 void cpu_step(struct Chip8 *cpu);
+void cpu_update_timers(struct Chip8 *cpu);
+void cpu_cycles(struct Chip8 *cpu, SDL_Renderer *ren, long cycles);
 
 #endif

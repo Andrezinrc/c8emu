@@ -1,37 +1,49 @@
 #include "cpu.h"
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
-
-#define UNKNOWN_OPCODE(op) \
-    do { \
-        fprintf(stderr, "Unknown opcode: 0x%04X at PC: 0x%03X\n", \
-                op, cpu->PC); \
-        exit(1); \
-    } while (0)
-
+#include "cpu_internal.h"
+#include "display.h"
+#include "trace.h"
 
 void cpu_init(struct Chip8 *cpu) {
+    printf("--- Initializing CHIP-8 Emulator ---\n");
+
     memset(cpu, 0, sizeof(struct Chip8));
     cpu->PC = 0x200;
 }
 
+int cpu_load_rom(struct Chip8 *cpu, const char *rom_path) {
+    FILE *file = fopen(rom_path, "rb");
+    if (!file) return 0;
+
+    fseek(file, 0, SEEK_END);
+    long rom_size = ftell(file);
+    rewind(file);
+    if (rom_size > (RAM_SIZE - 0x200)) {
+        fclose(file);
+        return 0;
+    }
+    size_t bytes_read = fread(&cpu->ram[0x200], 1, rom_size, file);
+    fclose(file);
+
+    return bytes_read == (size_t)rom_size;
+}
+
+// CPU Instructions
+
 void cpu_step(struct Chip8 *cpu) {
     uint16_t op = (cpu->ram[cpu->PC] << 8) | cpu->ram[cpu->PC + 1];
-    
-    printf("PC: 0x%04X | Opcode: 0x%04X\n", cpu->PC, op);
-    
+
     /* Decode & Execute */
     switch (op & 0xF000) {
         case 0x0000:
             switch (op) {
                 case 0x00E0: /* CLS */
+                    TRACE_CPU(cpu, "CLS", op);
                     memset(cpu->display, 0, sizeof(cpu->display));
-                    cpu->draw_flag = true;
+                    cpu->draw_flag = 1;
                     cpu->PC += 2;
                     break;
                 case 0x00EE: /* RET */
+                    TRACE_CPU(cpu, "RET", op);
                     cpu->SP--;
                     cpu->PC = cpu->stack[cpu->SP];
                     break;
@@ -40,45 +52,53 @@ void cpu_step(struct Chip8 *cpu) {
             }
             break;
         case 0x1000: /* 1NNN - JP addr */
+            TRACE_CPU(cpu, "JP", op);
             cpu->PC = OP_NNN(op);
             break;
         case 0x2000: /* 2NNN - CALL addr */
+            TRACE_CPU(cpu, "CALL", op);
             cpu->stack[cpu->SP] = cpu->PC + 2;
             cpu->SP++;
             cpu->PC = OP_NNN(op);
             break;
         case 0x3000: /* 3XKK - SE Vx, byte */
+            TRACE_CPU(cpu, "SE_BYTE", op);
             if (cpu->V[OP_X(op)] == OP_KK(op)) cpu->PC += 4;
             else cpu->PC += 2;
             break;
         case 0x4000: /* 4XKK - SNE Vx, byte */
+            TRACE_CPU(cpu, "SNE_BYTE", op);
             if (cpu->V[OP_X(op)] != OP_KK(op)) cpu->PC += 4;
             else cpu->PC += 2;
             break;
         case 0x5000: /* 5XY0 - SE Vx, Vy */
+            TRACE_CPU(cpu, "SE_REG", op);
             if (cpu->V[OP_X(op)] == cpu->V[OP_Y(op)]) cpu->PC += 4;
             else cpu->PC += 2;
             break;
         case 0x6000: /* 6XKK - LD Vx, byte */
+            TRACE_CPU(cpu, "LD_BYTE", op);
             cpu->V[OP_X(op)] = OP_KK(op);
             cpu->PC += 2;
             break;
         case 0x7000: /* 7XKK - ADD Vx, byte */
+            TRACE_CPU(cpu, "ADD_BYTE", op);
             cpu->V[OP_X(op)] += OP_KK(op);
             cpu->PC += 2;
             break;
         case 0x8000:
             switch (OP_N(op)) {
                 /* 8XY0 - LD Vx, Vy */
-                case 0x0: cpu->V[OP_X(op)] = cpu->V[OP_Y(op)]; cpu->PC += 2; break;
+                case 0x0: TRACE_CPU(cpu, "LD_REG", op);  cpu->V[OP_X(op)] = cpu->V[OP_Y(op)]; cpu->PC += 2; break;
                 /* 8XY1 - OR Vx, Vy */
-                case 0x1: cpu->V[OP_X(op)] |= cpu->V[OP_Y(op)]; cpu->PC += 2; break;
+                case 0x1: TRACE_CPU(cpu, "OR", op); cpu->V[OP_X(op)] |= cpu->V[OP_Y(op)]; cpu->PC += 2; break;
                 /* 8XY2 - AND Vx, Vy */
-                case 0x2: cpu->V[OP_X(op)] &= cpu->V[OP_Y(op)]; cpu->PC += 2; break;
+                case 0x2: TRACE_CPU(cpu, "AND", op); cpu->V[OP_X(op)] &= cpu->V[OP_Y(op)]; cpu->PC += 2; break;
                 /* 8XY3 - XOR Vx, Vy */
-                case 0x3: cpu->V[OP_X(op)] ^= cpu->V[OP_Y(op)]; cpu->PC += 2; break;
+                case 0x3: TRACE_CPU(cpu, "XOR", op); cpu->V[OP_X(op)] ^= cpu->V[OP_Y(op)]; cpu->PC += 2; break;
                 /* 8XY4 - ADD Vx, Vy */
                 case 0x4: {
+                    TRACE_CPU(cpu, "ADD_REG", op);
                     uint16_t sum = cpu->V[OP_X(op)] + cpu->V[OP_Y(op)];
                     cpu->V[0xF] = (sum > 255) ? 1 : 0;
                     cpu->V[OP_X(op)] = sum & 0xFF;
@@ -87,6 +107,7 @@ void cpu_step(struct Chip8 *cpu) {
                 }
                 /* 8XY5 - SUB Vx, Vy */
                 case 0x5: {
+                    TRACE_CPU(cpu, "SUB", op);
                     uint8_t borrow = cpu->V[OP_X(op)] > cpu->V[OP_Y(op)] ? 1 : 0;
                     cpu->V[OP_X(op)] -= cpu->V[OP_Y(op)];
                     cpu->V[0xF] = borrow;
@@ -95,12 +116,14 @@ void cpu_step(struct Chip8 *cpu) {
                 }
                 /* 8XY6 - SHR Vx {, Vy} */
                 case 0x6:
+                    TRACE_CPU(cpu, "SHR", op);
                     cpu->V[0xF] = cpu->V[OP_X(op)] & 0x01;
                     cpu->V[OP_X(op)] >>= 1;
                     cpu->PC += 2;
                     break;
                 /* 8XY7 - SUBN Vx, Vy */
                 case 0x7: {
+                    TRACE_CPU(cpu, "SUBN", op);
                     uint16_t sub = cpu->V[OP_Y(op)] - cpu->V[OP_X(op)];
                     uint8_t borrow = cpu->V[OP_Y(op)] > cpu->V[OP_X(op)] ? 1 : 0;
                     cpu->V[OP_X(op)] = sub;
@@ -110,6 +133,7 @@ void cpu_step(struct Chip8 *cpu) {
                 }
                 /* 8XYE - SHL Vx {, Vy} */
                 case 0xE:
+                    TRACE_CPU(cpu, "SHL", op);
                     cpu->V[0xF] = (cpu->V[OP_X(op)] >> 7) & 0x01;
                     cpu->V[OP_X(op)] <<= 1;
                     cpu->PC += 2;
@@ -119,21 +143,47 @@ void cpu_step(struct Chip8 *cpu) {
             }
             break;
         case 0x9000: /* 9XY0 - SNE Vx, Vy */
+            TRACE_CPU(cpu, "SNE_REG", op);
             if (cpu->V[OP_X(op)] != cpu->V[OP_Y(op)]) cpu->PC += 4;
             else cpu->PC += 2;
             break;
         case 0xA000: /* ANNN - LD I, addr */
+            TRACE_CPU(cpu, "LD_I", op);
             cpu->I = OP_NNN(op);
             cpu->PC += 2;
             break;
         case 0xB000: /* BNNN - JP V0, addr */
+            TRACE_CPU(cpu, "JP_V0", op);
             cpu->PC = OP_NNN(op) + cpu->V[0];
             break;
         case 0xC000: /* CXKK - RND Vx, byte */
+            TRACE_CPU(cpu, "RND", op);
             cpu->V[OP_X(op)] = (rand() % 256) & OP_KK(op);
             cpu->PC += 2;
             break;
         default:
             UNKNOWN_OPCODE(op);
+    }
+}
+
+void cpu_update_timers(struct Chip8 *cpu) {
+    if (cpu->delay_timer > 0) {
+        cpu->delay_timer--;
+    }
+    if (cpu->sound_timer > 0) {
+        cpu->sound_timer--;
+    }
+}
+
+void cpu_cycles(struct Chip8 *cpu, SDL_Renderer *ren, long cycles) {
+    printf("\n--- Executing Cycle ---\n");
+    while (cycles > 0) {
+        cpu_step(cpu);
+        cycles--;
+    }
+
+    if (cpu->draw_flag) {
+        display_update(ren, cpu);
+        cpu->draw_flag = 0;
     }
 }
