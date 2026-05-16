@@ -19,7 +19,7 @@ Run the emulator by passing the path to a CHIP-8 ROM as an argument:
 ```bash
 ./mychip8 /path/to/rom.ch8
 ```
-![CHIP-8](screen.jpg)
+![IBM logo](screen1.jpg)
 
 ## License
 

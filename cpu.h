@@ -26,11 +26,8 @@ struct Chip8 {
     int      draw_flag;
 };
 
-extern void (*cpu_op_handler[0x10000])(struct Chip8*, uint16_t);
-extern const char* cpu_op_name[0x10000];
-
-int cpu_load_rom(struct Chip8 *cpu, const char *rom_path);
 void cpu_init(struct Chip8 *cpu);
+int cpu_load_rom(struct Chip8 *cpu, const char *rom_path);
 void cpu_step(struct Chip8 *cpu);
 void cpu_update_timers(struct Chip8 *cpu);
 void cpu_cycles(struct Chip8 *cpu, SDL_Renderer *ren, long cycles);
