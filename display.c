@@ -1,3 +1,8 @@
+/* @file cpu.c
+ *
+ * @author André Moreira.
+ *
+ */
 #include "display.h"
 
 int display_init(SDL_Window **win, SDL_Renderer **ren) {

@@ -2,14 +2,22 @@
 #include "display.h"
 #include <stdio.h>
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        printf("Use: ./mychip8 /path/to/rom.ch8");
+        return 1;
+    }
+
     struct Chip8 cpu;
     SDL_Window *win = NULL;
     SDL_Renderer *ren = NULL;
 
     cpu_init(&cpu);
+    display_init(&win, &ren);
 
-    if (!display_init(&win, &ren) || !cpu_load_rom(&cpu, "Chip8 emulator Logo [Garstyciuks].ch8")) {
+    char *ROM = argv[1];
+    if(!cpu_load_rom(&cpu, ROM)) {
+        printf("ROM not found!\n");
         return 1;
     }
 
@@ -25,6 +33,8 @@ int main() {
 
         SDL_Delay(16);
     }
+
+    display_close(win, ren);
 
     return 0;
 

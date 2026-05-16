@@ -1,3 +1,8 @@
+/* @file cpu.c
+ *
+ * @author André Moreira.
+ *
+ */
 #include "cpu.h"
 #include "cpu_internal.h"
 #include "display.h"
@@ -161,6 +166,51 @@ void cpu_step(struct Chip8 *cpu) {
             cpu->V[OP_X(op)] = (rand() % 256) & OP_KK(op);
             cpu->PC += 2;
             break;
+        case 0xD000: { /* DXYN - DRW Vx, Vy, nibble */
+            TRACE_CPU(cpu, "DRW", op);
+            uint8_t x = cpu->V[OP_X(op)];
+            uint8_t y = cpu->V[OP_Y(op)];
+            uint8_t height = OP_N(op);
+
+            cpu->V[0xF] = 0;
+
+            for (int row = 0; row < height; row++) {
+                uint8_t sprite_byte =  cpu->ram[cpu->I + row];
+                for (int col = 0; col < 8; col++) {
+                    uint8_t bit = (sprite_byte & (0x80 >> col)) ? 1 : 0;
+                    
+                    int pixel_x = (x + col) % 64;
+                    int pixel_y = (y + row) % 32;
+
+                    if (bit == 1) {
+                        if (cpu->display[pixel_x][pixel_y] == 1) {
+                            cpu->V[0xF] = 1;
+                        }
+                        cpu->display[pixel_x][pixel_y] ^= 1;
+                    }
+                }
+            }
+
+            cpu->draw_flag = 1;
+            cpu->PC += 2;
+            break;
+        }
+        case 0xE000:
+            switch (OP_KK(op)) {
+                case 0x009E: /* EX9E - SKP Vx */
+                    TRACE_CPU(cpu, "SKP", op);
+                    if (cpu->key[cpu->V[OP_X(op)]] != 0) cpu->PC += 4;
+                    else cpu->PC += 2;
+                    break;
+                case 0x00A1: /* EXA1 - SKNP Vx */
+                    TRACE_CPU(cpu, "SKNP", op);
+                    if (cpu->key[cpu->V[OP_X(op)]] == 0) cpu->PC += 4;
+                    else cpu->PC += 2;
+                    break;
+                default:
+                    UNKNOWN_OPCODE(op);
+            }
+            break;
         default:
             UNKNOWN_OPCODE(op);
     }
@@ -176,7 +226,9 @@ void cpu_update_timers(struct Chip8 *cpu) {
 }
 
 void cpu_cycles(struct Chip8 *cpu, SDL_Renderer *ren, long cycles) {
+#ifdef DEBUG_MODE    
     printf("\n--- Executing Cycle ---\n");
+#endif
     while (cycles > 0) {
         cpu_step(cpu);
         cycles--;

@@ -4,7 +4,7 @@
 #include <SDL2/SDL.h>
 #include "cpu.h"
 
-#define SCALE 5
+#define SCALE 15
 
 struct Chip8;
 
