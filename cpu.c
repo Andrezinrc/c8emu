@@ -232,6 +232,50 @@ void cpu_step(struct Chip8 *cpu) {
                     UNKNOWN_OPCODE(op);
             }
             break;
+        case 0xF000:
+            switch (OP_KK(op)) {
+                case 0x0007: /* FX07 - LD Vx, DT */
+                    TRACE_CPU(cpu, "LD_VX_DT", op);
+                    cpu->V[OP_X(op)] = cpu->delay_timer;
+                    cpu->PC += 2;
+                    break;
+                case 0x000A: { /* FX0A - LD Vx, K */
+                    TRACE_CPU(cpu, "LD_VX_K", op);
+                    int key_pressed = 0;
+                    for (int i = 0; i < 16; i++) {
+                        if (cpu->key[i] != 0) {
+                            cpu->V[OP_X(op)] = i;
+                            key_pressed = 1;
+                            break;
+                        }
+                    }
+                    if (key_pressed) cpu->PC += 2;
+                    break;
+                }
+                case 0x0015: /* FX15 - LD DT, Vx */
+                    TRACE_CPU(cpu, "LD_DT_VX", op);
+                    cpu->delay_timer = cpu->V[OP_X(op)];
+                    cpu->PC += 2;
+                    break;
+                case 0x0018: /* FX18 - LD ST, Vx */
+                    TRACE_CPU(cpu, "LD_ST_VX", op);
+                    cpu->sound_timer =  cpu->V[OP_X(op)];
+                    cpu->PC += 2;
+                    break;
+                case 0x001E: /* FX1E - ADD I, Vx */
+                    TRACE_CPU(cpu, "ADD_I_VX", op);
+                    cpu->I += cpu->V[OP_X(op)];
+                    cpu->PC += 2;
+                    break;
+                case 0x0029: /* FX29 - LD F, Vx */
+                    TRACE_CPU(cpu, "LD_F_VX", op);
+                    cpu->I = cpu->V[OP_X(op)] * 5;
+                    cpu->PC += 2;
+                    break;
+                default:
+                    UNKNOWN_OPCODE(op);
+            }
+            break;
         default:
             UNKNOWN_OPCODE(op);
     }

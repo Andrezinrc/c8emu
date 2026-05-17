@@ -18,7 +18,7 @@ cpu.o: cpu.c cpu.h
 	$(CC) $(CFLAGS) -c cpu.c -o cpu.o
 
 display.o: display.c display.h
-	$(CC) $(CFLAGS) -c display.c -o  display.o
+	$(CC) $(CFLAGS) -c display.c -o display.o
 
 clean:
 	rm -f $(TARGET) $(OBJS)
