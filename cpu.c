@@ -5,7 +5,7 @@
  */
 #include "cpu.h"
 #include "cpu_internal.h"
-#include "display.h"
+#include "video.h"
 #include "trace.h"
 
 uint8_t chip8_fontset[80] = {
@@ -33,7 +33,7 @@ void cpu_init(struct Chip8 *cpu) {
     memset(cpu, 0, sizeof(struct Chip8));
     cpu->PC = 0x200;
 
-    memcpy(&cpu->ram[0], chip8_fontset, sizeof(chip8_fontset));
+    memcpy(&cpu->memory[0], chip8_fontset, sizeof(chip8_fontset));
 }
 
 int cpu_load_rom(struct Chip8 *cpu, const char *rom_path) {
@@ -43,11 +43,8 @@ int cpu_load_rom(struct Chip8 *cpu, const char *rom_path) {
     fseek(file, 0, SEEK_END);
     long rom_size = ftell(file);
     rewind(file);
-    if (rom_size > (RAM_SIZE - 0x200)) {
-        fclose(file);
-        return 0;
-    }
-    size_t bytes_read = fread(&cpu->ram[0x200], 1, rom_size, file);
+
+    size_t bytes_read = fread(&cpu->memory[0x200], 1, rom_size, file);
     fclose(file);
 
     return bytes_read == (size_t)rom_size;
@@ -56,7 +53,7 @@ int cpu_load_rom(struct Chip8 *cpu, const char *rom_path) {
 // CPU Instructions
 
 void cpu_step(struct Chip8 *cpu) {
-    uint16_t op = (cpu->ram[cpu->PC] << 8) | cpu->ram[cpu->PC + 1];
+    uint16_t op = (cpu->memory[cpu->PC] << 8) | cpu->memory[cpu->PC + 1];
 
     /* Decode & Execute */
     switch (op & 0xF000) {
@@ -64,14 +61,14 @@ void cpu_step(struct Chip8 *cpu) {
             switch (op) {
                 case 0x00E0: /* CLS */
                     TRACE_CPU(cpu, "CLS", op);
-                    memset(cpu->display, 0, sizeof(cpu->display));
+                    memset(cpu->VIDEO, 0, sizeof(cpu->VIDEO));
                     cpu->draw_flag = 1;
                     cpu->PC += 2;
                     break;
                 case 0x00EE: /* RET */
                     TRACE_CPU(cpu, "RET", op);
+                    cpu->PC = cpu->stack[cpu->SP - 1];
                     cpu->SP--;
-                    cpu->PC = cpu->stack[cpu->SP];
                     break;
                 default:
                     UNKNOWN_OPCODE(op);
@@ -134,7 +131,7 @@ void cpu_step(struct Chip8 *cpu) {
                 /* 8XY5 - SUB Vx, Vy */
                 case 0x5: {
                     TRACE_CPU(cpu, "SUB", op);
-                    uint8_t borrow = cpu->V[OP_X(op)] > cpu->V[OP_Y(op)] ? 1 : 0;
+                    uint8_t borrow = cpu->V[OP_X(op)] >= cpu->V[OP_Y(op)] ? 1 : 0;
                     cpu->V[OP_X(op)] -= cpu->V[OP_Y(op)];
                     cpu->V[0xF] = borrow;
                     cpu->PC += 2;
@@ -143,6 +140,7 @@ void cpu_step(struct Chip8 *cpu) {
                 /* 8XY6 - SHR Vx {, Vy} */
                 case 0x6:
                     TRACE_CPU(cpu, "SHR", op);
+                    cpu->V[OP_X(op)] = cpu->V[OP_Y(op)];
                     cpu->V[0xF] = cpu->V[OP_X(op)] & 0x01;
                     cpu->V[OP_X(op)] >>= 1;
                     cpu->PC += 2;
@@ -151,7 +149,7 @@ void cpu_step(struct Chip8 *cpu) {
                 case 0x7: {
                     TRACE_CPU(cpu, "SUBN", op);
                     uint16_t sub = cpu->V[OP_Y(op)] - cpu->V[OP_X(op)];
-                    uint8_t borrow = cpu->V[OP_Y(op)] > cpu->V[OP_X(op)] ? 1 : 0;
+                    uint8_t borrow = cpu->V[OP_Y(op)] >= cpu->V[OP_X(op)] ? 1 : 0;
                     cpu->V[OP_X(op)] = sub;
                     cpu->V[0xF] = borrow;
                     cpu->PC += 2;
@@ -160,6 +158,7 @@ void cpu_step(struct Chip8 *cpu) {
                 /* 8XYE - SHL Vx {, Vy} */
                 case 0xE:
                     TRACE_CPU(cpu, "SHL", op);
+                    cpu->V[OP_X(op)] = cpu->V[OP_Y(op)];
                     cpu->V[0xF] = (cpu->V[OP_X(op)] >> 7) & 0x01;
                     cpu->V[OP_X(op)] <<= 1;
                     cpu->PC += 2;
@@ -196,18 +195,21 @@ void cpu_step(struct Chip8 *cpu) {
             cpu->V[0xF] = 0;
 
             for (int row = 0; row < height; row++) {
-                uint8_t sprite_byte =  cpu->ram[cpu->I + row];
-                for (int col = 0; col < 8; col++) {
-                    uint8_t bit = (sprite_byte & (0x80 >> col)) ? 1 : 0;
-                    
-                    int pixel_x = (x + col) % 64;
-                    int pixel_y = (y + row) % 32;
 
-                    if (bit == 1) {
-                        if (cpu->display[pixel_x][pixel_y] == 1) {
+                uint8_t sprite_byte =  cpu->memory[cpu->I + row];
+                for (int col = 0; col < 8; col++) {
+                    
+                    if ((sprite_byte & (0x80 >> col)) != 0) {
+                        int px = (x + col) % 64;
+                        int py = (y + row) % 32;
+
+                        int vid_index = px + (py * 64);
+
+                        if (cpu->VIDEO[vid_index] == 1) {
                             cpu->V[0xF] = 1;
                         }
-                        cpu->display[pixel_x][pixel_y] ^= 1;
+
+                        cpu->VIDEO[vid_index] ^= 1;
                     }
                 }
             }
@@ -220,12 +222,12 @@ void cpu_step(struct Chip8 *cpu) {
             switch (OP_KK(op)) {
                 case 0x009E: /* EX9E - SKP Vx */
                     TRACE_CPU(cpu, "SKP", op);
-                    if (cpu->key[cpu->V[OP_X(op)]] != 0) cpu->PC += 4;
+                    if (cpu->KEYPAD[cpu->V[OP_X(op)]] != 0) cpu->PC += 4;
                     else cpu->PC += 2;
                     break;
                 case 0x00A1: /* EXA1 - SKNP Vx */
                     TRACE_CPU(cpu, "SKNP", op);
-                    if (cpu->key[cpu->V[OP_X(op)]] == 0) cpu->PC += 4;
+                    if (cpu->KEYPAD[cpu->V[OP_X(op)]] == 0) cpu->PC += 4;
                     else cpu->PC += 2;
                     break;
                 default:
@@ -236,30 +238,36 @@ void cpu_step(struct Chip8 *cpu) {
             switch (OP_KK(op)) {
                 case 0x0007: /* FX07 - LD Vx, DT */
                     TRACE_CPU(cpu, "LD_VX_DT", op);
-                    cpu->V[OP_X(op)] = cpu->delay_timer;
+                    cpu->V[OP_X(op)] = cpu->DT;
                     cpu->PC += 2;
                     break;
                 case 0x000A: { /* FX0A - LD Vx, K */
                     TRACE_CPU(cpu, "LD_VX_K", op);
-                    int key_pressed = 0;
+                    int pressed = 0;
                     for (int i = 0; i < 16; i++) {
-                        if (cpu->key[i] != 0) {
+                        if (cpu->KEYPAD[i] != 0) {
                             cpu->V[OP_X(op)] = i;
-                            key_pressed = 1;
+                            pressed = 1;
                             break;
                         }
                     }
-                    if (key_pressed) cpu->PC += 2;
+
+                    if (pressed) {
+                        cpu->PC += 2;
+                    } else {
+                        return;
+                    }
+
                     break;
                 }
                 case 0x0015: /* FX15 - LD DT, Vx */
                     TRACE_CPU(cpu, "LD_DT_VX", op);
-                    cpu->delay_timer = cpu->V[OP_X(op)];
+                    cpu->DT = cpu->V[OP_X(op)];
                     cpu->PC += 2;
                     break;
                 case 0x0018: /* FX18 - LD ST, Vx */
                     TRACE_CPU(cpu, "LD_ST_VX", op);
-                    cpu->sound_timer =  cpu->V[OP_X(op)];
+                    cpu->ST =  cpu->V[OP_X(op)];
                     cpu->PC += 2;
                     break;
                 case 0x001E: /* FX1E - ADD I, Vx */
@@ -272,6 +280,35 @@ void cpu_step(struct Chip8 *cpu) {
                     cpu->I = cpu->V[OP_X(op)] * 5;
                     cpu->PC += 2;
                     break;
+                case 0x0033: { /* FX33 - LD B, Vx */
+                    TRACE_CPU(cpu, "LD_B_VX", op);
+                    uint8_t value = cpu->V[OP_X(op)];
+                    cpu->memory[cpu->I] = value / 100;
+                    cpu->memory[cpu->I + 1] = (value / 10) % 10;
+                    cpu->memory[cpu->I + 2] = value % 10;
+                    cpu->PC += 2;
+                    break;
+                }
+                case 0x0055: { /* FX55 - LD [I], Vx */
+                    TRACE_CPU(cpu, "LD_MEM_VX", op);
+                    int x = OP_X(op);
+                    for (int i = 0; i <= x; i++) {
+                        cpu->memory[cpu->I + i] = cpu->V[i];
+                    }
+                    cpu->I += x + 1;
+                    cpu->PC += 2;
+                    break;
+                }
+                case 0x0065: { /* FX65 - LD Vx, [I] */
+                    TRACE_CPU(cpu, "LD_VX_MEM", op);
+                    int x = OP_X(op);
+                    for (int i = 0; i <= x; i++) {
+                        cpu->V[i] = cpu->memory[cpu->I + i];
+                    }
+                    cpu->I += x + 1;
+                    cpu->PC += 2;
+                    break;
+                }
                 default:
                     UNKNOWN_OPCODE(op);
             }
@@ -281,26 +318,12 @@ void cpu_step(struct Chip8 *cpu) {
     }
 }
 
-void cpu_update_timers(struct Chip8 *cpu) {
-    if (cpu->delay_timer > 0) {
-        cpu->delay_timer--;
+void cpu_update_timers(struct Chip8 *cpu)
+{
+    if (cpu->DT > 0) {
+        cpu->DT--;
     }
-    if (cpu->sound_timer > 0) {
-        cpu->sound_timer--;
-    }
-}
-
-void cpu_cycles(struct Chip8 *cpu, SDL_Renderer *ren, long cycles) {
-#ifdef DEBUG_MODE    
-    printf("\n--- Executing Cycle ---\n");
-#endif
-    while (cycles > 0) {
-        cpu_step(cpu);
-        cycles--;
-    }
-
-    if (cpu->draw_flag) {
-        display_update(ren, cpu);
-        cpu->draw_flag = 0;
+    if (cpu->ST > 0) {
+        cpu->ST--;
     }
 }

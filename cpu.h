@@ -1,28 +1,22 @@
 #ifndef CPU_H
 #define CPU_H
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include "display.h"
-
-#define RAM_SIZE   4096
-#define REG_COUNT  16
-#define STACK_SIZE 16
-#define KEY_COUNT  16
+#include "video.h"
 
 struct Chip8 {
-    uint8_t  ram[RAM_SIZE];
-    uint8_t  V[REG_COUNT];
+    uint8_t  memory[4096];
+    uint8_t  V[16];
     uint16_t I;
     uint16_t PC;    
-    uint16_t stack[STACK_SIZE];
+    uint16_t stack[16];
     uint8_t  SP;
-    uint8_t  delay_timer;
-    uint8_t  sound_timer;
-    uint8_t  key[KEY_COUNT];
-    uint8_t  display[64][32];
+    
+    uint8_t  DT;
+    uint8_t  ST;
+    
+    uint8_t  VIDEO[2048];
+    uint8_t  KEYPAD[16];
     int      draw_flag;
 };
 
@@ -30,6 +24,5 @@ void cpu_init(struct Chip8 *cpu);
 int cpu_load_rom(struct Chip8 *cpu, const char *rom_path);
 void cpu_step(struct Chip8 *cpu);
 void cpu_update_timers(struct Chip8 *cpu);
-void cpu_cycles(struct Chip8 *cpu, SDL_Renderer *ren, long cycles);
 
 #endif
