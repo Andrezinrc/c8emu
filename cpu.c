@@ -58,7 +58,7 @@ void cpu_step(struct Chip8 *cpu) {
     /* Decode & Execute */
     switch (op & 0xF000) {
         case 0x0000:
-            switch (op) {
+            switch (OP_KK(op)) {
                 case 0x00E0: /* CLS */
                     TRACE_CPU(cpu, "CLS", op);
                     memset(cpu->VIDEO, 0, sizeof(cpu->VIDEO));
@@ -67,11 +67,13 @@ void cpu_step(struct Chip8 *cpu) {
                     break;
                 case 0x00EE: /* RET */
                     TRACE_CPU(cpu, "RET", op);
-                    cpu->PC = cpu->stack[cpu->SP - 1];
                     cpu->SP--;
+                    cpu->PC = cpu->stack[cpu->SP];
                     break;
-                default:
-                    UNKNOWN_OPCODE(op);
+                default: /* SYS addr */
+                    TRACE_CPU(cpu, "SYS", op);
+                    cpu->PC += 2;
+                    break;
             }
             break;
         case 0x1000: /* 1NNN - JP addr */
@@ -131,7 +133,7 @@ void cpu_step(struct Chip8 *cpu) {
                 /* 8XY5 - SUB Vx, Vy */
                 case 0x5: {
                     TRACE_CPU(cpu, "SUB", op);
-                    uint8_t borrow = cpu->V[OP_X(op)] >= cpu->V[OP_Y(op)] ? 1 : 0;
+                    uint8_t borrow = cpu->V[OP_X(op)] > cpu->V[OP_Y(op)] ? 1 : 0;
                     cpu->V[OP_X(op)] -= cpu->V[OP_Y(op)];
                     cpu->V[0xF] = borrow;
                     cpu->PC += 2;
@@ -140,7 +142,6 @@ void cpu_step(struct Chip8 *cpu) {
                 /* 8XY6 - SHR Vx {, Vy} */
                 case 0x6:
                     TRACE_CPU(cpu, "SHR", op);
-                    cpu->V[OP_X(op)] = cpu->V[OP_Y(op)];
                     cpu->V[0xF] = cpu->V[OP_X(op)] & 0x01;
                     cpu->V[OP_X(op)] >>= 1;
                     cpu->PC += 2;
@@ -149,7 +150,7 @@ void cpu_step(struct Chip8 *cpu) {
                 case 0x7: {
                     TRACE_CPU(cpu, "SUBN", op);
                     uint16_t sub = cpu->V[OP_Y(op)] - cpu->V[OP_X(op)];
-                    uint8_t borrow = cpu->V[OP_Y(op)] >= cpu->V[OP_X(op)] ? 1 : 0;
+                    uint8_t borrow = cpu->V[OP_Y(op)] > cpu->V[OP_X(op)] ? 1 : 0;
                     cpu->V[OP_X(op)] = sub;
                     cpu->V[0xF] = borrow;
                     cpu->PC += 2;
@@ -158,7 +159,6 @@ void cpu_step(struct Chip8 *cpu) {
                 /* 8XYE - SHL Vx {, Vy} */
                 case 0xE:
                     TRACE_CPU(cpu, "SHL", op);
-                    cpu->V[OP_X(op)] = cpu->V[OP_Y(op)];
                     cpu->V[0xF] = (cpu->V[OP_X(op)] >> 7) & 0x01;
                     cpu->V[OP_X(op)] <<= 1;
                     cpu->PC += 2;
@@ -295,7 +295,6 @@ void cpu_step(struct Chip8 *cpu) {
                     for (int i = 0; i <= x; i++) {
                         cpu->memory[cpu->I + i] = cpu->V[i];
                     }
-                    cpu->I += x + 1;
                     cpu->PC += 2;
                     break;
                 }
@@ -305,7 +304,6 @@ void cpu_step(struct Chip8 *cpu) {
                     for (int i = 0; i <= x; i++) {
                         cpu->V[i] = cpu->memory[cpu->I + i];
                     }
-                    cpu->I += x + 1;
                     cpu->PC += 2;
                     break;
                 }
