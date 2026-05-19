@@ -277,6 +277,7 @@ void cpu_step(struct Chip8 *cpu) {
                     for (int i = 0; i <= x; i++) {
                         cpu->memory[cpu->I + i] = cpu->V[i];
                     }
+                    cpu->I += x + 1;
                     cpu->PC += 2;
                     break;
                 }
@@ -286,6 +287,7 @@ void cpu_step(struct Chip8 *cpu) {
                     for (int i = 0; i <= x; i++) {
                         cpu->V[i] = cpu->memory[cpu->I + i];
                     }
+                    cpu->I += x + 1;
                     cpu->PC += 2;
                     break;
                 }
