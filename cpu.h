@@ -23,6 +23,6 @@ struct Chip8 {
 void cpu_init(struct Chip8 *cpu);
 int cpu_load_rom(struct Chip8 *cpu, const char *rom_path);
 void cpu_step(struct Chip8 *cpu);
-void cpu_update_timers(struct Chip8 *cpu);
+void cpu_update_timers(struct Chip8 *cpu, SDL_AudioDeviceID dev, int8_t *som_buffer);
 
 #endif

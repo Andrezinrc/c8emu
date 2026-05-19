@@ -21,6 +21,22 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // audio
+    SDL_AudioSpec want;
+    SDL_zero(want);
+    want.freq = 44100;
+    want.format = AUDIO_S8;
+    want.channels = 1;
+    want.samples = 512;
+
+    SDL_AudioDeviceID dev = SDL_OpenAudioDevice(NULL, 0, &want, NULL, 0);
+    SDL_PauseAudioDevice(dev, 1);
+
+    int8_t som_buffer[44100];
+    for (int i = 0; i < 44100; i++) {
+        som_buffer[i] = ((i / 50) % 2 == 0) ? 50 : -50;
+    }
+
     uint32_t last_frame_time = SDL_GetTicks();
     uint32_t last_fps_time = SDL_GetTicks();
 
@@ -143,7 +159,7 @@ int main(int argc, char *argv[]) {
         // ~60Hz
         while (timer_acc >= 16)
         {
-            cpu_update_timers(&cpu);
+            cpu_update_timers(&cpu, dev, som_buffer);
             timer_acc -= 16;
             frames++;
         }
@@ -174,6 +190,7 @@ int main(int argc, char *argv[]) {
     }
 
     vid_close(win, ren);
+    SDL_CloseAudioDevice(dev);
 
     return 0;
 

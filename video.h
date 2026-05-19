@@ -4,7 +4,7 @@
 #include <SDL2/SDL.h>
 #include "cpu.h"
 
-#define SCALE 5
+#define SCALE 10
 
 #define PIXEL_ON_COLOR 0xFFFFFFFF
 #define PIXEL_OFF_COLOR 0x00000000
