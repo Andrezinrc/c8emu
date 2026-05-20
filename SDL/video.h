@@ -2,7 +2,7 @@
 #define VIDEO_H
 
 #include <SDL2/SDL.h>
-#include "cpu.h"
+#include "../cpu.h"
 
 #define SCALE 5
 

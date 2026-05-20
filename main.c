@@ -1,5 +1,7 @@
 #include "cpu.h"
-#include "video.h"
+#include "SDL/video.h"
+#include "SDL/audio.h"
+#include "SDL/keypad.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -13,28 +15,16 @@ int main(int argc, char *argv[]) {
 
     cpu_init(&cpu);
     vid_init(&win, &ren);
+    
+    int8_t som_buffer[44100];
+    SDL_AudioDeviceID aud_dev = aud_init(som_buffer);
 
     char *ROM = argv[1];
     if(!cpu_load_rom(&cpu, ROM)) {
         printf("ROM not found!\n");
         vid_close(win, ren);
+        aud_close(aud_dev);
         return 1;
-    }
-
-    // audio
-    SDL_AudioSpec want;
-    SDL_zero(want);
-    want.freq = 44100;
-    want.format = AUDIO_S8;
-    want.channels = 1;
-    want.samples = 512;
-
-    SDL_AudioDeviceID dev = SDL_OpenAudioDevice(NULL, 0, &want, NULL, 0);
-    SDL_PauseAudioDevice(dev, 1);
-
-    int8_t som_buffer[44100];
-    for (int i = 0; i < 44100; i++) {
-        som_buffer[i] = ((i / 50) % 2 == 0) ? 50 : -50;
     }
 
     uint32_t last_frame_time = SDL_GetTicks();
@@ -54,94 +44,8 @@ int main(int argc, char *argv[]) {
                 running = 0;
             }
 
-            if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
-                uint8_t state = (event.type == SDL_KEYDOWN) ? 1 : 0;
-
-                // keypad
-                switch (event.key.keysym.sym)
-                {
-                    case SDLK_1:
-                    {
-                        cpu.KEYPAD[0x1] = state;
-                        break;
-                    }
-                    case SDLK_2:
-                    {
-                        cpu.KEYPAD[0x2] = state;
-                        break;
-                    }
-                    case SDLK_3:
-                    {
-                        cpu.KEYPAD[0x3] = state;
-                        break;
-                    }
-                    case SDLK_4:
-                    {
-                        cpu.KEYPAD[0xC] = state;
-                        break;
-                    }
-                    case SDLK_q:
-                    {
-                        cpu.KEYPAD[0x4] = state;
-                        break;
-                    }
-                    case SDLK_w:
-                    {
-                        cpu.KEYPAD[0x5] = state;
-                        break;
-                    }
-                    case SDLK_e:
-                    {
-                        cpu.KEYPAD[0x6] = state;
-                        break;
-                    }
-                    case SDLK_r:
-                    {
-                        cpu.KEYPAD[0xD] = state;
-                        break;
-                    }
-                    case SDLK_a:
-                    {
-                        cpu.KEYPAD[0x7] = state;
-                        break;
-                    }
-                    case SDLK_s:
-                    {
-                        cpu.KEYPAD[0x8] = state;
-                        break;
-                    }
-                    case SDLK_d:
-                    {
-                        cpu.KEYPAD[0x9] = state;
-                        break;
-                    }
-                    case SDLK_f:
-                    {
-                        cpu.KEYPAD[0xE] = state;
-                        break;
-                    }
-                    case SDLK_z:
-                    {
-                        cpu.KEYPAD[0xA] = state;
-                        break;
-                    }
-                    case SDLK_x:
-                    {
-                        cpu.KEYPAD[0x0] = state;
-                        break;
-                    }
-                    case SDLK_c:
-                    {
-                        cpu.KEYPAD[0xB] = state;
-                        break;
-                    }
-                    case SDLK_v:
-                    {
-                        cpu.KEYPAD[0xF] = state;
-                        break;
-                    }
-                }
-            } 
+            // keypad
+            key_update(&cpu, &event);
         }
 
         uint32_t current_time = SDL_GetTicks();
@@ -159,7 +63,7 @@ int main(int argc, char *argv[]) {
         // ~60Hz
         while (timer_acc >= 16)
         {
-            cpu_update_timers(&cpu, dev, som_buffer);
+            cpu_update_timers(&cpu, aud_dev, som_buffer);
             timer_acc -= 16;
             frames++;
         }
@@ -190,7 +94,7 @@ int main(int argc, char *argv[]) {
     }
 
     vid_close(win, ren);
-    SDL_CloseAudioDevice(dev);
+    aud_close(aud_dev);
 
     return 0;
 

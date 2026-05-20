@@ -2,7 +2,7 @@
 #define CPU_H
 
 #include <stdint.h>
-#include "video.h"
+#include "SDL/video.h"
 
 struct Chip8 {
     uint8_t  memory[4096];

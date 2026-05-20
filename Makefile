@@ -5,7 +5,7 @@ LIBS = -lSDL2
 TARGET = mychip8
 BUILD_DIR = build
 
-SRCS = main.c cpu.c video.c
+SRCS = main.c cpu.c SDL/video.c SDL/audio.c SDL/keypad.c
 
 OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 
@@ -15,7 +15,7 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET) $(LIBS)
 
 $(BUILD_DIR)/%.o: %.c
-	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

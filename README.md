@@ -19,9 +19,9 @@ Run the emulator by passing the path to a CHIP-8 ROM as an argument:
 ```bash
 ./mychip8 path/to/rom.ch8
 ```
-![Chip-8 Emulator](screen.jpg)
-![Pong](screen1.jpg)
-![Space Invaders](screen2.jpg)
+![Chip-8 Emulator](images/screen.jpg)
+![Pong](images/screen1.jpg)
+![Space Invaders](images/screen2.jpg)
 
 ## License
 

@@ -6,7 +6,6 @@
 #include "cpu.h"
 #include "cpu_internal.h"
 #include "fontset.h"
-#include "video.h"
 #include "trace.h"
 
 void cpu_init(struct Chip8 *cpu) {
@@ -300,19 +299,19 @@ void cpu_step(struct Chip8 *cpu) {
     }
 }
 
-void cpu_update_timers(struct Chip8 *cpu, SDL_AudioDeviceID dev, int8_t *som_buffer)
+void cpu_update_timers(struct Chip8 *cpu, SDL_AudioDeviceID aud_dev, int8_t *som_buffer)
 {
     if (cpu->DT > 0) {
         cpu->DT--;
     }
 
     if (cpu->ST > 0) {
-        SDL_PauseAudioDevice(dev, 0);
-        SDL_QueueAudio(dev, som_buffer, 44100 / 60);        
+        SDL_PauseAudioDevice(aud_dev, 0);
+        SDL_QueueAudio(aud_dev, som_buffer, 44100 / 60);        
         cpu->ST--;
     } 
     else {
-        SDL_PauseAudioDevice(dev, 1);
-        SDL_ClearQueuedAudio(dev);
+        SDL_PauseAudioDevice(aud_dev, 1);
+        SDL_ClearQueuedAudio(aud_dev);
     }
 }
