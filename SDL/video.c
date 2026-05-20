@@ -8,7 +8,7 @@
 SDL_Texture *texture = NULL;
 
 int vid_init(SDL_Window **win, SDL_Renderer **ren) {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) return 0;
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) return 0;
 
     *win = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 64 * SCALE, 32 * SCALE, 0);
 

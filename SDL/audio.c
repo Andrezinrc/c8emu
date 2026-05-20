@@ -1,6 +1,8 @@
 #include "audio.h"
 
 SDL_AudioDeviceID aud_init(int8_t *som_buffer) {
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) return 0;
+
     SDL_AudioSpec want;
     SDL_zero(want);
     
@@ -15,7 +17,7 @@ SDL_AudioDeviceID aud_init(int8_t *som_buffer) {
         som_buffer[i] = ((i / 50) % 2 == 0) ? 50 : -50;
     }
 
-    SDL_QueueAudio(aud_dev, som_buffer, sizeof(som_buffer));
+    SDL_QueueAudio(aud_dev, som_buffer, 44100);
 
     return aud_dev;
 }
