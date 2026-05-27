@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cpu.h"
+#include "fontset.h"
+#include "trace.h"
+#include "config.h"
 
 #define UNKNOWN_OPCODE(op) \
     do { \

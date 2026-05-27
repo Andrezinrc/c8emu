@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "SDL/video.h"
+#include "config.h"
 
 struct Chip8 {
     uint8_t  memory[4096];
@@ -18,11 +19,12 @@ struct Chip8 {
     uint8_t  VIDEO[2048];
     uint8_t  KEYPAD[16];
     int      draw_flag;
+    int      disp_wait;
 };
 
 void cpu_init(struct Chip8 *cpu);
 int cpu_load_rom(struct Chip8 *cpu, const char *rom_path);
-void cpu_step(struct Chip8 *cpu);
+void cpu_step(struct Chip8 *cpu, struct Config *conf);
 void cpu_update_timers(struct Chip8 *cpu, SDL_AudioDeviceID dev, int8_t *som_buffer);
 
 #endif

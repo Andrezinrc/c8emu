@@ -21,7 +21,7 @@ Run the emulator by passing the path to a CHIP-8 ROM as an argument:
 ```
 ![Chip-8 Emulator](images/screen.jpg)
 ![Pong](images/screen1.jpg)
-![Space Invaders](images/screen2.jpg)
+![Dino Run](images/dinorun.jpg)
 
 ## License
 

@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "config.h"
 #include "SDL/video.h"
 #include "SDL/audio.h"
 #include "SDL/keypad.h"
@@ -15,7 +16,12 @@ int main(int argc, char *argv[]) {
 
     cpu_init(&cpu);
     vid_init(&win, &ren);
-    
+
+    struct Config conf;
+    conf.disp_wait = 0;
+    conf.cpu_hz = 20;
+    print_config(&conf);
+
     int8_t som_buffer[44100];
     SDL_AudioDeviceID aud_dev = aud_init(som_buffer);
 
@@ -55,7 +61,7 @@ int main(int argc, char *argv[]) {
         //cpu_acc += elapsed_time * 0.3f; // 300Hz
         //timer_acc += elapsed_time;
 
-        cpu_acc += elapsed_time * 3;
+        cpu_acc += elapsed_time * conf.cpu_hz;
         timer_acc += elapsed_time;
 
         //total_cls += cpu_cycles(&cpu, ren, &cpu_acc);
@@ -66,13 +72,14 @@ int main(int argc, char *argv[]) {
             cpu_update_timers(&cpu, aud_dev, som_buffer);
             timer_acc -= 16;
             frames++;
+            cpu.disp_wait = 1;
         }
 
         int cycles_to_run = (int)cpu_acc / 10;
         cpu_acc = (int)cpu_acc % 10;
 
         for (int i = 0; i < cycles_to_run; i++) {
-            cpu_step(&cpu);
+            cpu_step(&cpu, &conf);
             total_cls++;
         }
 

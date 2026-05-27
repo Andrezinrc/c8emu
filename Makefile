@@ -5,7 +5,7 @@ LIBS = -lSDL2
 TARGET = mychip8
 BUILD_DIR = build
 
-SRCS = main.c cpu.c SDL/video.c SDL/audio.c SDL/keypad.c
+SRCS = main.c cpu.c config.c SDL/video.c SDL/audio.c SDL/keypad.c
 
 OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 
