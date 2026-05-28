@@ -13,14 +13,23 @@ int main(int argc, char *argv[]) {
     struct Chip8 cpu;
     SDL_Window *win = NULL;
     SDL_Renderer *ren = NULL;
-
+    
     cpu_init(&cpu);
-    vid_init(&win, &ren);
 
+    // EMU CONFIG
     struct Config conf;
-    conf.disp_wait = 0;
-    conf.cpu_hz = 20;
+    conf.cpu_hz =       10;
+    conf.vf_reset  =    1;
+    conf.memory_quirk = 1;
+    conf.disp_wait =    1;
+    conf.clip_quirk   = 1;
+    conf.shift_quirk =  0;
+    conf.window_scale = 5;
+    conf.fg_color =     0xffffffff;
+    conf.bg_color =     0x00000000;
     print_config(&conf);
+
+    vid_init(&win, &ren, &conf);
 
     int8_t som_buffer[44100];
     SDL_AudioDeviceID aud_dev = aud_init(som_buffer);
@@ -84,7 +93,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (cpu.draw_flag) {
-            vid_update(ren, &cpu);
+            vid_update(ren, &cpu, &conf);
             cpu.draw_flag = 0;
         }
 

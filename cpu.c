@@ -103,21 +103,21 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
                 case 0x1:
                     TRACE_CPU(cpu, "OR", op);
                     cpu->V[OP_X(op)] |= cpu->V[OP_Y(op)];
-                    cpu->V[0xF] = 0;
+                    if (conf->vf_reset) cpu->V[0xF] = 0;
                     cpu->PC += 2;
                     break;
                 /* 8XY2 - AND Vx, Vy */
                 case 0x2:
                     TRACE_CPU(cpu, "AND", op);
                     cpu->V[OP_X(op)] &= cpu->V[OP_Y(op)];
-                    cpu->V[0xF] = 0;
+                    if (conf->vf_reset) cpu->V[0xF] = 0;
                     cpu->PC += 2;
                     break;
                 /* 8XY3 - XOR Vx, Vy */
                 case 0x3:
                     TRACE_CPU(cpu, "XOR", op);
                     cpu->V[OP_X(op)] ^= cpu->V[OP_Y(op)];
-                    cpu->V[0xF] = 0;
+                    if (conf->vf_reset) cpu->V[0xF] = 0;
                     cpu->PC += 2;
                     break;
                 /* 8XY4 - ADD Vx, Vy */
@@ -141,9 +141,9 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
                 /* 8XY6 - SHR Vx {, Vy} */
                 case 0x6: {
                     TRACE_CPU(cpu, "SHR", op);
-                    uint8_t y_val = cpu->V[OP_Y(op)];
-                    uint8_t f_val = y_val & 0x01;
-                    cpu->V[OP_X(op)] = y_val >> 1;
+                    uint8_t target_val = conf->shift_quirk ? cpu->V[OP_X(op)] : cpu->V[OP_Y(op)];
+                    uint8_t f_val = target_val & 0x01;
+                    cpu->V[OP_X(op)] = target_val >> 1;
                     cpu->V[0xF] = f_val;
                     cpu->PC += 2;
                     break;
@@ -161,9 +161,9 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
                 /* 8XYE - SHL Vx {, Vy} */
                 case 0xE: {
                     TRACE_CPU(cpu, "SHL", op);
-                    int8_t y_val = cpu->V[OP_Y(op)];
-                    uint8_t f_val = (y_val >> 7) & 0x01;
-                    cpu->V[OP_X(op)] = y_val << 1;
+                    uint8_t target_val = conf->shift_quirk ? cpu->V[OP_X(op)] : cpu->V[OP_Y(op)];
+                    uint8_t f_val = (target_val >> 7) & 0x01;
+                    cpu->V[OP_X(op)] = target_val << 1;
                     cpu->V[0xF] = f_val;
                     cpu->PC += 2;
                     break;
@@ -208,8 +208,13 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
                         int px = x + col;
                         int py = y + row;
 
-                        if (px >= 64 || py >= 32) {
-                            continue;
+                        if (!conf->clip_quirk) {
+                            px %= 64;
+                            py %= 32;
+                        } else {
+                            if (px >= 64 || py >= 32) {
+                                continue;
+                            }
                         }
 
                         int vid_index = px + (py * 64);
@@ -310,7 +315,9 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
                     for (int i = 0; i <= x; i++) {
                         cpu->memory[cpu->I + i] = cpu->V[i];
                     }
-                    cpu->I += x + 1;
+                    if (conf->memory_quirk) {
+                        cpu->I += x + 1;
+                    }
                     cpu->PC += 2;
                     break;
                 }
@@ -320,7 +327,9 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
                     for (int i = 0; i <= x; i++) {
                         cpu->V[i] = cpu->memory[cpu->I + i];
                     }
-                    cpu->I += x + 1;
+                    if (conf->memory_quirk) {
+                        cpu->I += x + 1;
+                    }
                     cpu->PC += 2;
                     break;
                 }

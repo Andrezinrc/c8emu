@@ -7,10 +7,10 @@
 
 SDL_Texture *texture = NULL;
 
-int vid_init(SDL_Window **win, SDL_Renderer **ren) {
+int vid_init(SDL_Window **win, SDL_Renderer **ren, struct Config *conf) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) return 0;
 
-    *win = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 64 * SCALE, 32 * SCALE, 0);
+    *win = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 64 * conf->window_scale, 32 * conf->window_scale, 0);
 
     if (!*win) return 0;
 
@@ -23,14 +23,14 @@ int vid_init(SDL_Window **win, SDL_Renderer **ren) {
     return 1;
 }
 
-void vid_update(SDL_Renderer *ren, struct Chip8 *cpu) {
+void vid_update(SDL_Renderer *ren, struct Chip8 *cpu, struct Config *conf) {
     uint32_t pixel_buffer[64 * 32];
 
     for (int i = 0; i < 2048; i++) {
         if (cpu->VIDEO[i]) {
-            pixel_buffer[i] = PIXEL_ON_COLOR;
+            pixel_buffer[i] = conf->fg_color;
         } else {
-            pixel_buffer[i] = PIXEL_OFF_COLOR;
+            pixel_buffer[i] = conf->bg_color;
         }
     }
 
