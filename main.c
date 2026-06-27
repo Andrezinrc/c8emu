@@ -16,7 +16,6 @@ int main(int argc, char *argv[]) {
     
     cpu_init(&cpu);
 
-    // EMU CONFIG
     struct Config conf;
     conf.cpu_hz =       10;
     conf.vf_reset  =    1;
@@ -25,7 +24,7 @@ int main(int argc, char *argv[]) {
     conf.clip_quirk   = 1;
     conf.shift_quirk =  0;
     conf.window_scale = 5;
-    conf.fg_color =     0xffffffff;
+    conf.fg_color =     0xFFFFFFFF;
     conf.bg_color =     0x00000000;
     print_config(&conf);
 
@@ -55,11 +54,8 @@ int main(int argc, char *argv[]) {
     while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
+            if (event.type == SDL_QUIT)
                 running = 0;
-            }
-
-            // keypad
             key_update(&cpu, &event);
         }
 
@@ -91,12 +87,10 @@ int main(int argc, char *argv[]) {
             cpu_step(&cpu, &conf);
             total_cls++;
         }
-
         if (cpu.draw_flag) {
             vid_update(ren, &cpu, &conf);
             cpu.draw_flag = 0;
         }
-
         if (current_time - last_fps_time >= 1000)
         {
             //printf("VIDEO: %d Hz | CPU: %d Hz\n", frames, total_cls);

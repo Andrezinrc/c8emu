@@ -1,11 +1,7 @@
-/* @file cpu.c
- *
- * @author André Moreira.
- *
- */
 #include "cpu_internal.h"
 
-void cpu_init(struct Chip8 *cpu) {
+void cpu_init(struct Chip8 *cpu)
+{
     printf("--- Initializing CHIP-8 Emulator ---\n");
 
     memset(cpu, 0, sizeof(struct Chip8));
@@ -14,7 +10,8 @@ void cpu_init(struct Chip8 *cpu) {
     memcpy(&cpu->memory[0], chip8_fontset, sizeof(chip8_fontset));
 }
 
-int cpu_load_rom(struct Chip8 *cpu, const char *rom_path) {
+int cpu_load_rom(struct Chip8 *cpu, const char *rom_path)
+{
     FILE *file = fopen(rom_path, "rb");
     if (!file) return 0;
 
@@ -30,7 +27,8 @@ int cpu_load_rom(struct Chip8 *cpu, const char *rom_path) {
 
 // CPU Instructions
 
-void cpu_step(struct Chip8 *cpu, struct Config *conf) {
+void cpu_step(struct Chip8 *cpu, struct Config *conf)
+{
     if (!cpu->disp_wait) return;
 
     uint16_t op = (cpu->memory[cpu->PC] << 8) | cpu->memory[cpu->PC + 1];
@@ -68,18 +66,24 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
             break;
         case 0x3000: /* 3XKK - SE Vx, byte */
             TRACE_CPU(cpu, "SE_BYTE", op);
-            if (cpu->V[OP_X(op)] == OP_KK(op)) cpu->PC += 4;
-            else cpu->PC += 2;
+            if (cpu->V[OP_X(op)] == OP_KK(op))
+                cpu->PC += 4;
+            else
+                cpu->PC += 2;
             break;
         case 0x4000: /* 4XKK - SNE Vx, byte */
             TRACE_CPU(cpu, "SNE_BYTE", op);
-            if (cpu->V[OP_X(op)] != OP_KK(op)) cpu->PC += 4;
-            else cpu->PC += 2;
+            if (cpu->V[OP_X(op)] != OP_KK(op))
+                cpu->PC += 4;
+            else
+                cpu->PC += 2;
             break;
         case 0x5000: /* 5XY0 - SE Vx, Vy */
             TRACE_CPU(cpu, "SE_REG", op);
-            if (cpu->V[OP_X(op)] == cpu->V[OP_Y(op)]) cpu->PC += 4;
-            else cpu->PC += 2;
+            if (cpu->V[OP_X(op)] == cpu->V[OP_Y(op)])
+                cpu->PC += 4;
+            else
+                cpu->PC += 2;
             break;
         case 0x6000: /* 6XKK - LD Vx, byte */
             TRACE_CPU(cpu, "LD_BYTE", op);
@@ -103,21 +107,24 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
                 case 0x1:
                     TRACE_CPU(cpu, "OR", op);
                     cpu->V[OP_X(op)] |= cpu->V[OP_Y(op)];
-                    if (conf->vf_reset) cpu->V[0xF] = 0;
+                    if (conf->vf_reset)
+                        cpu->V[0xF] = 0;
                     cpu->PC += 2;
                     break;
                 /* 8XY2 - AND Vx, Vy */
                 case 0x2:
                     TRACE_CPU(cpu, "AND", op);
                     cpu->V[OP_X(op)] &= cpu->V[OP_Y(op)];
-                    if (conf->vf_reset) cpu->V[0xF] = 0;
+                    if (conf->vf_reset)
+                        cpu->V[0xF] = 0;
                     cpu->PC += 2;
                     break;
                 /* 8XY3 - XOR Vx, Vy */
                 case 0x3:
                     TRACE_CPU(cpu, "XOR", op);
                     cpu->V[OP_X(op)] ^= cpu->V[OP_Y(op)];
-                    if (conf->vf_reset) cpu->V[0xF] = 0;
+                    if (conf->vf_reset)
+                        cpu->V[0xF] = 0;
                     cpu->PC += 2;
                     break;
                 /* 8XY4 - ADD Vx, Vy */
@@ -174,8 +181,10 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
             break;
         case 0x9000: /* 9XY0 - SNE Vx, Vy */
             TRACE_CPU(cpu, "SNE_REG", op);
-            if (cpu->V[OP_X(op)] != cpu->V[OP_Y(op)]) cpu->PC += 4;
-            else cpu->PC += 2;
+            if (cpu->V[OP_X(op)] != cpu->V[OP_Y(op)])
+                cpu->PC += 4;
+            else
+                cpu->PC += 2;
             break;
         case 0xA000: /* ANNN - LD I, addr */
             TRACE_CPU(cpu, "LD_I", op);
@@ -212,16 +221,14 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
                             px %= 64;
                             py %= 32;
                         } else {
-                            if (px >= 64 || py >= 32) {
+                            if (px >= 64 || py >= 32)
                                 continue;
-                            }
                         }
 
                         int vid_index = px + (py * 64);
 
-                        if (cpu->VIDEO[vid_index] == 1) {
+                        if (cpu->VIDEO[vid_index] == 1)
                             cpu->V[0xF] = 1;
-                        }
 
                         cpu->VIDEO[vid_index] ^= 1;
                     }
@@ -229,7 +236,8 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
             }
 
             cpu->draw_flag = 1;
-            if (conf->disp_wait) cpu->disp_wait = 0;
+            if (conf->disp_wait)
+                cpu->disp_wait = 0;
             cpu->PC += 2;
             break;
         }
@@ -237,13 +245,17 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
             switch (OP_KK(op)) {
                 case 0x009E: /* EX9E - SKP Vx */
                     TRACE_CPU(cpu, "SKP", op);
-                    if (cpu->KEYPAD[cpu->V[OP_X(op)]] != 0) cpu->PC += 4;
-                    else cpu->PC += 2;
+                    if (cpu->KEYPAD[cpu->V[OP_X(op)]] != 0)
+                        cpu->PC += 4;
+                    else
+                        cpu->PC += 2;
                     break;
                 case 0x00A1: /* EXA1 - SKNP Vx */
                     TRACE_CPU(cpu, "SKNP", op);
-                    if (cpu->KEYPAD[cpu->V[OP_X(op)]] == 0) cpu->PC += 4;
-                    else cpu->PC += 2;
+                    if (cpu->KEYPAD[cpu->V[OP_X(op)]] == 0)
+                        cpu->PC += 4;
+                    else
+                        cpu->PC += 2;
                     break;
                 default:
                     UNKNOWN_OPCODE(op);
@@ -270,13 +282,12 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
                         }
                         return;
                     }
-                    for (int i = 0; i < 16; i++) {
+                    for (int i = 0; i < 16; i++)
                         if (cpu->KEYPAD[i] != 0) {
                             saved_key = i;
                             waiting_for_release = 1;
                             return;
                         }
-                    }
 
                     return;
                 }
@@ -312,24 +323,24 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
                 case 0x0055: { /* FX55 - LD [I], Vx */
                     TRACE_CPU(cpu, "LD_MEM_VX", op);
                     int x = OP_X(op);
-                    for (int i = 0; i <= x; i++) {
+                    for (int i = 0; i <= x; i++)
                         cpu->memory[cpu->I + i] = cpu->V[i];
-                    }
-                    if (conf->memory_quirk) {
+
+                    if (conf->memory_quirk)
                         cpu->I += x + 1;
-                    }
+
                     cpu->PC += 2;
                     break;
                 }
                 case 0x0065: { /* FX65 - LD Vx, [I] */
                     TRACE_CPU(cpu, "LD_VX_MEM", op);
                     int x = OP_X(op);
-                    for (int i = 0; i <= x; i++) {
+                    for (int i = 0; i <= x; i++)
                         cpu->V[i] = cpu->memory[cpu->I + i];
-                    }
-                    if (conf->memory_quirk) {
+
+                    if (conf->memory_quirk)
                         cpu->I += x + 1;
-                    }
+
                     cpu->PC += 2;
                     break;
                 }
@@ -342,17 +353,16 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf) {
     }
 }
 
-void cpu_update_timers(struct Chip8 *cpu, SDL_AudioDeviceID aud_dev, int8_t *som_buffer)
+void cpu_update_timers(struct Chip8 *cpu, SDL_AudioDeviceID aud_dev,
+                            int8_t *som_buffer)
 {
-    if (cpu->DT > 0) {
+    if (cpu->DT > 0)
         cpu->DT--;
-    }
-
     if (cpu->ST > 0) {
         SDL_PauseAudioDevice(aud_dev, 0);
         SDL_QueueAudio(aud_dev, som_buffer, 44100 / 60);        
         cpu->ST--;
-    } 
+    }
     else {
         SDL_PauseAudioDevice(aud_dev, 1);
         SDL_ClearQueuedAudio(aud_dev);
