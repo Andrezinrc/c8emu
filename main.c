@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        printf("Use: ./mychip8 path/to/rom.ch8\n");
+        printf("./c8emu path/to/rom.ch8\n");
         return 1;
     }
 

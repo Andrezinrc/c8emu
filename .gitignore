@@ -1,2 +1,4 @@
-mychip8
+c8emu
+build/
+*.ch8
 *.o

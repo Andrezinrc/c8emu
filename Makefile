@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -O2
 LIBS = -lSDL2
 
-TARGET = mychip8
+TARGET = c8emu
 BUILD_DIR = build
 
 SRCS = main.c cpu.c config.c SDL/video.c SDL/audio.c SDL/keypad.c

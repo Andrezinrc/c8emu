@@ -1,4 +1,4 @@
-# Mychip8 Emulator
+# c8emu
 
 A CHIP-8 interpreter written in pure C, using SDL2 for graphics rendering. 
 
@@ -17,7 +17,7 @@ make
 Run the emulator by passing the path to a CHIP-8 ROM as an argument:
 
 ```bash
-./mychip8 path/to/rom.ch8
+./c8emu path/to/rom.ch8
 ```
 ![Chip-8 Emulator](images/screen.jpg)
 ![Pong](images/screen1.jpg)
