@@ -9,6 +9,7 @@ void print_config(struct Config *conf) {
     printf("CLIP QUIRK  : %s\n", conf->clip_quirk ? "ON": "OFF");
     printf("SHIFT QUIRK : %s\n", conf->shift_quirk ? "ON" : "OFF");
     printf("WINDOW SCALE: %dx (%dx%d)\n", conf->window_scale, 64 * conf->window_scale, 32 * conf->window_scale);
+    printf("TRACE       : %s\n", conf->trace ?  "ON" : "OFF");
     printf("COLOR BG    : 0x%08X\n", conf->bg_color);
     printf("COLOR FG    : 0x%08X\n", conf->fg_color);
 }

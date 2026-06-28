@@ -23,7 +23,8 @@ int main(int argc, char *argv[]) {
     conf.disp_wait =    1;
     conf.clip_quirk   = 1;
     conf.shift_quirk =  0;
-    conf.window_scale = 5;
+    conf.window_scale = 10;
+    conf.trace =        0;
     conf.fg_color =     0xFFFFFFFF;
     conf.bg_color =     0x00000000;
     print_config(&conf);

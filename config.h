@@ -11,6 +11,7 @@ struct Config {
     int shift_quirk;
     int disp_wait;
     int window_scale;
+    int trace;
     uint32_t bg_color;
     uint32_t fg_color;
 };
