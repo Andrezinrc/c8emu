@@ -1,6 +1,6 @@
 #define TRACE_CPU(conf, cpu, name, op) \
     do { \
-        if ((conf)->trace) { \
+        if ((conf)->cpu_trace) { \
             printf("[0x%03X] %-10s (0x%04X) | V%X=%02X, V%X=%02X, I=%04X\n", \
                 (cpu)->PC, \
                 (name), \

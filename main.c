@@ -17,16 +17,14 @@ int main(int argc, char *argv[]) {
     cpu_init(&cpu);
 
     struct Config conf;
-    conf.cpu_hz =       10;
+    conf.cpu_hz =       8;
+    conf.cpu_trace =    0;
     conf.vf_reset  =    1;
     conf.memory_quirk = 1;
     conf.disp_wait =    1;
     conf.clip_quirk   = 1;
     conf.shift_quirk =  0;
     conf.window_scale = 10;
-    conf.trace =        0;
-    conf.fg_color =     0xFFFFFFFF;
-    conf.bg_color =     0x00000000;
     print_config(&conf);
 
     vid_init(&win, &ren, &conf);
@@ -89,7 +87,7 @@ int main(int argc, char *argv[]) {
             total_cls++;
         }
         if (cpu.draw_flag) {
-            vid_update(ren, &cpu, &conf);
+            vid_update(ren, &cpu);
             cpu.draw_flag = 0;
         }
         if (current_time - last_fps_time >= 1000)

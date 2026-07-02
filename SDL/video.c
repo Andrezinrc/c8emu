@@ -21,15 +21,18 @@ int vid_init(SDL_Window **win, SDL_Renderer **ren, struct Config *conf)
     return 1;
 }
 
-void vid_update(SDL_Renderer *ren, struct Chip8 *cpu, struct Config *conf)
+void vid_update(SDL_Renderer *ren, struct Chip8 *cpu)
 {
     uint32_t pixel_buffer[64 * 32];
 
+    uint32_t fg_color = 0xffffffff;
+    uint32_t bg_color = 0x00000000;
+
     for (int i = 0; i < 2048; i++)
         if (cpu->VIDEO[i])
-            pixel_buffer[i] = conf->fg_color;
+            pixel_buffer[i] = fg_color;
         else
-            pixel_buffer[i] = conf->bg_color;
+            pixel_buffer[i] = bg_color;
 
     SDL_RenderClear(ren);
     SDL_UpdateTexture(texture, NULL, pixel_buffer, 64 * sizeof(uint32_t));
