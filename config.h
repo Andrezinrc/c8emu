@@ -10,6 +10,7 @@ struct Config {
     int memory_quirk;
     int clip_quirk;
     int shift_quirk;
+    int jump_quirk;
     int disp_wait;
     int window_scale;
 };

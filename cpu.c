@@ -192,8 +192,15 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf)
             cpu->PC += 2;
             break;
         case 0xB000: /* BNNN - JP V0, addr */
-            TRACE_CPU(conf, cpu, "JP_V0", op);
-            cpu->PC = OP_NNN(op) + cpu->V[0];
+            if (conf->jump_quirk) {
+                uint16_t xnn = op & 0x0FFF;
+                uint8_t x = OP_X(op);
+                TRACE_CPU(conf, cpu, "JP_VX", op);
+                cpu->PC = xnn + cpu->V[x];
+            } else {
+                TRACE_CPU(conf, cpu, "JP_V0", op);
+                cpu->PC = OP_NNN(op) + cpu->V[0];
+            }
             break;
         case 0xC000: /* CXKK - RND Vx, byte */
             TRACE_CPU(conf, cpu, "RND", op);
