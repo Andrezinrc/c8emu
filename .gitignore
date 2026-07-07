@@ -1,4 +1,4 @@
-c8emu
+chip8
 build/
 *.ch8
 *.o

@@ -1,27 +1,26 @@
-# c8emu
+# Chip8
 
-A CHIP-8 interpreter written in pure C, using SDL2 for graphics rendering. 
-
-This project was built from scratch following the technical specifications of [Cowgod's CHIP-8 Technical Reference](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM).
+A CHIP-8 emulator written in pure C using SDL2, with support for SCHIP and XO-CHIP extensions
 
 ## Building and Running
 
-Build the project using the provided `Makefile`:
+Configure and build the project:
 
 ```bash
-make
+mkdir build && cd build && cmake .. && make
 ```
 
 ## Execution
 
-Run the emulator by passing the path to a CHIP-8 ROM as an argument:
+Run the emulator by passing the path to a CHIP-8, SCHIP, or XO-CHIP ROM as an argument:
 
 ```bash
-./c8emu path/to/rom.ch8
+./chip8 path/to/rom.ch8 [-chip8 | -schip | -xochip] -[scale 5-20]
 ```
+
 ![Chip-8 Emulator](images/screen.jpg)
 ![Pong](images/screen1.jpg)
-![Dino Run](images/dinorun.jpg)
+![Superneatboy](images/screen2.jpg)
 
 ## License
 

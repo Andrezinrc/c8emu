@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        printf("./c8emu path/to/rom.ch8\n");
+        printf("./chip8 path/to/rom.ch8 [-chip8 | -schip | -xochip] [-scale 5-20]\n");
         return 1;
     }
 
@@ -17,29 +17,59 @@ int main(int argc, char *argv[]) {
     cpu_init(&cpu);
 
     struct Config conf;
-    conf.cpu_hz =       8;
-    conf.cpu_trace =    0;
-    conf.vf_reset  =    1;
-    conf.memory_quirk = 1;
-    conf.disp_wait =    1;
-    conf.clip_quirk   = 1;
-    conf.shift_quirk =  0;
-    conf.jump_quirk   = 0;
-    conf.window_scale = 10;
-    print_config(&conf);
+    conf.cpu_trace = 0;
 
+    int scale = 5;
+
+    for (int i = 2; i < argc; i++) {
+        if (strcmp(argv[i], "-schip") == 0)
+            conf.mode = MODE_SCHIP;
+        else if (strcmp(argv[i], "-xochip") == 0)
+            conf.mode = MODE_XOCHIP;
+        else if (strcmp(argv[i], "-chip8") == 0)
+            conf.mode = MODE_CHIP8;
+        else if (strcmp(argv[i], "-scale") == 0) {
+            if (i + 1 < argc) {
+                int temp_scale = atoi(argv[i + 1]);
+                if (temp_scale < 5) {
+                    printf("Scale %d is too small. Setting to 5\n", temp_scale);
+                    scale = 5;
+                } else if (temp_scale > 20) {
+                    printf("Scale %d is too large. Setting to 20\n", temp_scale);
+                    scale = 20;
+                } else {
+                    scale = temp_scale;
+                }
+                i++;
+            }
+        }
+    }
+
+    conf.window_scale = scale;
+    apply_mode_config(&conf);
     vid_init(&win, &ren, &conf);
 
     int8_t som_buffer[44100];
     SDL_AudioDeviceID aud_dev = aud_init(som_buffer);
 
     char *ROM = argv[1];
+    
+    FILE *f_check = fopen(ROM, "rb");
+    long rom_size = 0;
+    if (f_check) {
+        fseek(f_check, 0, SEEK_END);
+        rom_size = ftell(f_check);
+        fclose(f_check);
+    }
+
     if(!cpu_load_rom(&cpu, ROM)) {
         printf("ROM not found!\n");
         vid_close(win, ren);
         aud_close(aud_dev);
         return 1;
     }
+
+    print_config(&conf, ROM, rom_size);
 
     uint32_t last_frame_time = SDL_GetTicks();
     uint32_t last_fps_time = SDL_GetTicks();
@@ -93,7 +123,7 @@ int main(int argc, char *argv[]) {
         }
         if (current_time - last_fps_time >= 1000)
         {
-            //printf("VIDEO: %d Hz | CPU: %d Hz\n", frames, total_cls);
+            //printf("VIDEO: %d fps | CPU: %d Hz\n", frames, total_cls);
             
             frames = 0;
             total_cls = 0;
