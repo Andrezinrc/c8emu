@@ -393,11 +393,6 @@ void cpu_step(struct Chip8 *cpu, struct Config *conf)
                 current_I += sprite_height * bytes_per_row;
             }
 
-            // Index register auto increments only when both
-            // planes are active simultaneously
-            if (cpu->selected_plane == 3)
-                cpu->I = current_I;
-
             cpu->draw_flag = 1;
             if (conf->disp_wait)
                 cpu->disp_wait = 0;
